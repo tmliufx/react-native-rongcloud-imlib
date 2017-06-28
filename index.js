@@ -1,3 +1,3 @@
 import { NativeModules } from 'react-native';
 
-module.exports = NativeModules.RCTRongIMClient;
+export default NativeModules.RongIMLib;
