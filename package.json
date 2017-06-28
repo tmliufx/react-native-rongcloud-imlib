@@ -1,0 +1,19 @@
+{
+  "name": "react-native-rongcloud-imlib",
+  "version": "1.0.0",
+  "description": "rongcloud react-native module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Casstime/react-native-rongcloud-imlib.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Casstime/react-native-rongcloud-imlib/issues"
+  },
+  "homepage": "https://github.com/Casstime/react-native-rongcloud-imlib#readme"
+}
