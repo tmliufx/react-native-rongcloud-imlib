@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Casstime/react-native-rongcloud-imlib/issues"
   },
+  "peerDependencies": {
+    "react-native": "^0.44.0"
+  },
   "homepage": "https://github.com/Casstime/react-native-rongcloud-imlib#readme"
 }
