@@ -216,7 +216,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getConversationList(RongIMClient.ResultCallback<List<Conversation>>() {
+    imClient.getConversationList(new RongIMClient.ResultCallback<List<Conversation>>() {
 
       @Override
       public void onSuccess(List<Conversation> conversations) {
@@ -242,7 +242,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getConversationList(RongIMClient.ResultCallback<List<Conversation>>() {
+    imClient.getConversationList(new RongIMClient.ResultCallback<List<Conversation>>() {
 
       @Override
       public void onSuccess(List<Conversation> conversations) {
@@ -269,7 +269,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getConversation(Conversation.ConversationType.valueOf(type), targetId, RongIMClient.ResultCallback<Conversation>() {
+    imClient.getConversation(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Conversation>() {
       @Override
       public void onSuccess(Conversation conversation) {
         promise.resolve(Utils.convertConversation(conversation));
@@ -296,7 +296,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       return;
     }
     imClient.updateConversationInfo(Conversation.ConversationType.valueOf(type), targetId, title, portrait,
-            RongIMClient.ResultCallback<T>() {
+            new RongIMClient.ResultCallback<T>() {
 
       @Override
       public void onSuccess(T t) {
@@ -322,7 +322,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.removeConversation(Conversation.ConversationType.valueOf(type), targetId, RongIMClient.ResultCallback<Boolean>() {
+    imClient.removeConversation(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
 
       @Override
       public void onSuccess(Boolean result) {
@@ -348,7 +348,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.removeConversation(Conversation.ConversationType.valueOf(type), targetId, isTop, RongIMClient.ResultCallback<Boolean>() {
+    imClient.removeConversation(Conversation.ConversationType.valueOf(type), targetId, isTop, new RongIMClient.ResultCallback<Boolean>() {
 
       @Override
       public void onSuccess(Boolean result) {
@@ -371,7 +371,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getTotalUnreadCount(RongIMClient.ResultCallback<int>() {
+    imClient.getTotalUnreadCount(new RongIMClient.ResultCallback<int>() {
 
       @Override
       public void onSuccess(int count) {
@@ -396,7 +396,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getUnreadCount(Conversation.ConversationType.valueOf(type), targetId, RongIMClient.ResultCallback<int>() {
+    imClient.getUnreadCount(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<int>() {
 
       @Override
       public void onSuccess(int count) {
@@ -420,7 +420,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getUnreadCount(RongIMClient.ResultCallback<int>() {
+    imClient.getUnreadCount(new RongIMClient.ResultCallback<int>() {
 
       @Override
       public void onSuccess(int count) {
@@ -448,7 +448,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     for (int i = 0; i < types.size(); i++) {
       convTypes.add(Conversation.ConversationType.valueOf(type[i]));
     }
-    imClient.getUnreadCount(convTypes, RongIMClient.ResultCallback<Integer>() {
+    imClient.getUnreadCount(convTypes, new RongIMClient.ResultCallback<Integer>() {
 
       @Override
       public void onSuccess(int count) {
@@ -474,7 +474,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getLatestMessages(Conversation.ConversationType.valueOf(type), targetId, count, RongIMClient.ResultCallback<List<Message>>() {
+    imClient.getLatestMessages(Conversation.ConversationType.valueOf(type), targetId, count, new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
         // 历史消息记录，按照时间顺序从新到旧排列
@@ -503,7 +503,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       return;
     }
     imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, oldestMessageId, count,
-            RongIMClient.ResultCallback<List<Message>>() {
+            new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
         promise.resolve(Utils.convertMessageList(messages));
@@ -532,7 +532,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       return;
     }
     imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, baseMessageId, count, direction.toUppercase(),
-            RongIMClient.ResultCallback<List<Message>>() {
+            new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
         promise.resolve(Utils.convertMessageList(messages));
@@ -560,7 +560,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       return;
     }
     imClient.getRemoteHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, dateTime, count,
-            RongIMClient.ResultCallback<List<Message>>() {
+            new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
         // 按照时间顺序从新到旧排列
