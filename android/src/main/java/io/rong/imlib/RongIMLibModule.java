@@ -1,3 +1,7 @@
+/**
+ * Created By Javen Leung on June/30/2017
+ * 融云 Android SDK 版本 2.8.12
+ */
 package io.rong.imlib;
 
 import android.widget.Toast;
@@ -22,7 +26,9 @@ import io.rong.imlib.RongIMClient;
 import io.rong.imlib.model.Conversation;
 import io.rong.imlib.model.Message;
 import io.rong.imlib.model.MessageContent;
+import io.rong.imlib.model.UserOnlineStatusInfo;
 import io.rong.imlib.RongCommonDefine.GetMessageDirection;
+import io.rong.imlib.IRongCallback;
 
 public class RongIMLibModule extends ReactContextBaseJavaModule
   implements RongIMClient.OnReceiveMessageListener, RongIMClient.ConnectionStatusListener, LifecycleEventListener {
@@ -48,7 +54,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       RongIMClient.init(reactContext.getApplicationContext());
     }
 
-    // reactContext.addLifecycleEventListener(this);
+     reactContext.addLifecycleEventListener(this);
   }
 
   @Override
@@ -506,7 +512,8 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getLatestMessages(Conversation.ConversationType.valueOf(type), targetId, count, new RongIMClient.ResultCallback<List<Message>>() {
+    imClient.getLatestMessages(Conversation.ConversationType.valueOf(type), targetId, count,
+            new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
         // 历史消息记录，按照时间顺序从新到旧排列
@@ -520,16 +527,43 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   }
 
   /**
+   * 获取指定类型，targetId 的N条历史消息记录。通过此接口可以根据情况分段加载历史消息，节省网络资源，提高用户体验。
+   * @param type
+   * @param targetId
+   * @param oldestMessageId 最后一条消息的 Id，获取此消息之前的 count 条消息，没有消息第一次调用应设置为:-1
+   * @param count
+   * @param promise
+   */
+  @ReactMethod
+  public void getHistoryMessages(String type, String targetId, int oldestMessageId, int count, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, oldestMessageId, count,
+            new RongIMClient.ResultCallback<List<Message>>() {
+      @Override
+      public void onSuccess(List<Message> messages) {
+        promise.resolve(Utils.convertMessageList(messages));
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
    * 获取本地数据库中保存，特定类型，targetId 的N条历史消息记录。通过此接口可以根据情况分段加载历史消息，节省网络资源，提高用户体验。
    * @param type
    * @param targetId
-   * @param objectName
+   * @param objectName 消息类型标识。如RC:TxtMsg，RC:ImgMsg，RC:VcMsg等。
    * @param oldestMessageId
    * @param count
    * @param promise
    */
   @ReactMethod
-  public void getHistoryMessages(String type, String targetId, String objectName, int oldestMessageId, int count, final Promise promise) {
+  public void getHistoryMessagesByMsgType(String type, String targetId, String objectName, int oldestMessageId, int count, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
@@ -558,13 +592,41 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    * @param promise
    */
   @ReactMethod
-  public void getHistoryMessagesByTypeAndDirection(String type, String targetId, String objectName, int baseMessageId, int count, String direction, final Promise promise) {
+  public void getHistoryMessagesByDirection(String type, String targetId, String objectName, int baseMessageId, int count, String direction, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
     imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, baseMessageId, count, GetMessageDirection.valueOf(direction.toUpperCase()),
             new RongIMClient.ResultCallback<List<Message>>() {
+      @Override
+      public void onSuccess(List<Message> messages) {
+        promise.resolve(Utils.convertMessageList(messages));
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 在会话中搜索指定消息的前 before 数量和 after 数量的消息。 返回的消息列表中会包含指定的消息。消息列表时间顺序从新到旧。
+   * @param type
+   * @param targetId
+   * @param sentTime
+   * @param before
+   * @param after
+   * @param promise
+   */
+  @ReactMethod
+  public void getHistoryMessagesByRange(String type, String targetId, long sentTime, int before, int after, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, sentTime, before, after,
+            new RongIMClient.ResultCallback<java.util.List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
         promise.resolve(Utils.convertMessageList(messages));
@@ -605,8 +667,770 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     });
   }
 
+  /**
+   * 根据会话,搜索本地历史消息。 搜索结果可分页返回
+   * 如果需要自定义消息也能被搜索到,需要在自定义消息中实现 MessageContent.getSearchableWord() 方法
+   * @param type
+   * @param targetId
+   * @param keyword
+   * @param count
+   * @param beginTime
+   * @param promise
+   */
   @ReactMethod
-  public void show(String message, int duration) {
-    Toast.makeText(getReactApplicationContext(), message, duration).show();
+  public void searchMessages(String type, String targetId, String keyword, int count, long beginTime, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.searchMessages(Conversation.ConversationType.valueOf(type), targetId, keyword, count, beginTime
+            new RongIMClient.ResultCallback<List<Message>>() {
+      @Override
+      public void onSuccess(List<Message> messages) {
+        promise.resolve(Utils.convertMessageList(messages));
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据 messageId，删除指定的一条或者一组消息。
+   * @param messageIds
+   * @param promise
+   */
+  @ReactMethod
+  public void deleteMessagesByIds(ReadableArray messageIds, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    int size = messageIds.size();
+    int[] ids = new int[size];
+    for(int i = 0; i < size; i++) {
+      ids[i] = messageIds.getInt(i);
+    }
+    imClient.deleteMessages(ids, new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean success) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   *
+   * 清除指定会话的消息
+   * 此接口会删除指定会话中数据库的所有消息，同时，会清理数据库空间。 如果数据库特别大，超过几百 M，调用该接口会有少许耗时。
+   * @param type
+   * @param targetId
+   * @param promise
+   */
+  @ReactMethod
+  public void deleteMessagesByConversation(String type, String targetId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.deleteMessages(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean success) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 清空指定类型，targetId 的某一会话所有聊天消息记录。
+   * @param type
+   * @param targetId
+   * @param promise
+   */
+  @ReactMethod
+  public void clearMessages(String type, String targetId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.clearMessages(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean success) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 清除指定类型，targetId 的某一会话消息未读状态。
+   * @param type
+   * @param targetId
+   * @param promise
+   */
+  @ReactMethod
+  public void clearMessagesUnreadStatus(String type, String targetId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.clearMessagesUnreadStatus(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean success) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据 messageId 设置本地消息的附加信息，用于扩展消息的使用场景。
+   * 只能用于本地使用，无法同步给远程用户。
+   * @param messageId
+   * @param value  消息附加信息，最大 1024 字节。
+   * @param promise
+   */
+  @ReactMethod
+  public void setMessageExtra(int messageId, String value, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.setMessageExtra(messageId, value, new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean success) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据 messageId 设置接收到的消息状态。用于UI标记消息为已读，已下载等状态。
+   * @param messageId
+   * @param status 整型，todo: 确认是否0或1，和分别的意义
+   * @param promise
+   */
+  @ReactMethod
+  public void setMessageReceivedStatus(int messageId, int status, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.setMessageReceivedStatus(messageId, new Message.ReceivedStatus(status), new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean success) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据 messageId 设置消息的发送状态。用于UI标记消息为正在发送，对方已接收等状态。
+   * @param messageId
+   * @param status
+   * @param promise
+   */
+  @ReactMethod
+  public void setMessageSentStatus(int messageId, int status, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.setMessageSentStatus(messageId, new Message.SentStatus(status), new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean success) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据消息类型，targetId 获取某一会话的文字消息草稿。用于获取用户输入但未发送的暂存消息。
+   * @param type
+   * @param targetId
+   * @param promise
+   */
+  @ReactMethod
+  public void getTextMessageDraft(String type, String targetId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.getTextMessageDraft(Conversatin.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<String>() {
+      @Override
+      public void onSuccess(String draft) {
+        promise.resolve(draft);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据消息类型，targetId 保存某一会话的文字消息草稿。用于暂存用户输入但未发送的消息。
+   * @param type
+   * @param targetId
+   * @param content  草稿的文字内容
+   * @param promise
+   */
+  @ReactMethod
+  public void saveTextMessageDraft(String type, String targetId, String content, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.saveTextMessageDraft(Conversatin.ConversationType.valueOf(type), targetId, content, new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean result) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据消息类型，targetId 清除某一会话的文字消息草稿。
+   * @param type
+   * @param targetId
+   * @param content  草稿的文字内容
+   * @param promise
+   */
+  @ReactMethod
+  public void clearTextMessageDraft(String type, String targetId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.clearTextMessageDraft(Conversatin.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean result) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据 message id 获取消息体。
+   * @param messageId
+   * @param promise
+   */
+  @ReactMethod
+  public void getMessage(int messageId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.getMessage(messageId, new RongIMClient.ResultCallback<Message>() {
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 向本地会话中插入一条消息。这条消息只是插入本地会话，不会实际发送给服务器和对方。该消息不一定插入本地数据库，是否入库由消息的属性决定。
+   * @param type
+   * @param targetId
+   * @param senderId
+   * @param content
+   * @param sentTime
+   * @param promise
+   */
+  @ReactMethod
+  public void insertMessageWithSentTime(String type, String targetId, String senderId, ReadableMap content, long sentTime, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    // todo:确定是否这样转换
+    MessageContent msgContent = Utils.convertToMessageContent(content);
+    imClient.insertMessage(Conversatin.ConversationType.valueOf(type), targetId, senderId, msgContent, sentTime,
+            new RongIMClient.ResultCallback<Message>() {
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 向本地会话中插入一条消息。这条消息只是插入本地会话，不会实际发送给服务器和对方。该消息不一定插入本地数据库，是否入库由消息的属性决定。
+   * @param type
+   * @param targetId
+   * @param senderId
+   * @param content
+   * @param sentTime
+   * @param promise
+   */
+  @ReactMethod
+  public void insertMessageWithSentTime(String type, String targetId, String senderId, ReadableMap content, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    // todo:确定是否这样转换
+    MessageContent msgContent = Utils.convertToMessageContent(content);
+    imClient.insertMessage(Conversatin.ConversationType.valueOf(type), targetId, senderId, msgContent,
+            new RongIMClient.ResultCallback<Message>() {
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据会话类型，发送消息
+   * @param type
+   * @param targetId
+   * @param content
+   * @param pushContent
+   * @param pushData
+   * @param promise
+   */
+  @ReactMethod
+  public void sendMessageByConvType(String type, String targetId, ReadableArray content, String pushContent, String pushData, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    // todo:确定是否这样转换
+    MessageContent msgContent = Utils.convertToMessageContent(content);
+    imClient.sendMessage(Conversatin.ConversationType.valueOf(type), targetId, msgContent, pushContent, pushData,
+            new IRongCallback.ISendMessageCallback<Message>() {
+      // 消息已存储数据库
+      @Override
+      public void onAttached(Message message) {
+
+      }
+      // 消息发送成功
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      // 消息发送失败
+      @Override
+      public void onError(Message message, RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 发送消息
+   * @param message
+   * @param pushContent
+   * @param pushData
+   * @param promise
+   */
+  @ReactMethod
+  public void sendMessage(ReadableMap message, String pushContent, String pushData, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    // todo: message转换成融云Message类型
+    Message msg = new Message();
+    imClient.sendMessage(msg, pushContent, pushData, new IRongCallback.ISendMessageCallback<Message>() {
+      // 消息已存储数据库
+      @Override
+      public void onAttached(Message message) {
+
+      }
+      // 消息发送成功
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      // 消息发送失败
+      @Override
+      public void onError(Message message, RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据会话类型，发送图片消息。
+   * @param type
+   * @param targetId
+   * @param content
+   * @param pushContent 当下发 push 消息时，在通知栏里会显示这个字段, 如果发送 sdk 中默认的消息类型，例如 RC:TxtMsg, RC:VcMsg, RC:ImgMsg，则不需要填写，默认已经指定。
+   * @param pushData 附加信息。如果设置该字段，用户在收到 push 消息时，能通过 PushNotificationMessage.getPushData() 方法获取。
+   * @param promise
+   */
+  @ReactMethod
+  public void sendImageMessageByConvType(String type, String targetId, ReadableMap content, String pushContent, String pushData, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    // todo:确定是否这样转换
+    MessageContent msgContent = Utils.convertToMessageContent(content);
+    imClient.sendImageMessage(Conversatin.ConversationType.valueOf(type), targetId, msgContent, pushContent, pushData,
+            new RongIMClient.SendImageMessageCallback<Message>() {
+      // 消息已存储数据库
+      @Override
+      public void onAttached(Message message) {
+
+      }
+      // 消息发送进度
+      @Override
+      public void onProgress(Message message, int progress) {
+
+      }
+      // 消息发送成功
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      // 消息发送失败
+      @Override
+      public void onError(Message message, RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 发送图片消息
+   * @param message
+   * @param pushContent
+   * @param pushData
+   * @param promise
+   */
+  @ReactMethod
+  public void sendImageMessage(ReadableMap message, String pushContent, String pushData, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    // todo: message转换成融云Message类型
+    Message msg = new Message();
+    imClient.sendImageMessage(msg, pushContent, pushData, new RongIMClient.SendImageMessageCallback<Message>() {
+      // 消息已存储数据库
+      @Override
+      public void onAttached(Message message) {
+
+      }
+      // 消息发送进度
+      @Override
+      public void onProgress(Message message, int progress) {
+
+      }
+      // 消息发送成功
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      // 消息发送失败
+      @Override
+      public void onError(Message message, RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 发送图片消息，可以使用该方法将图片上传到自己的服务器发送，同时更新图片状态。
+   * @param message
+   * @param pushContent
+   * @param pushData
+   * @param promise
+   */
+  @ReactMethod
+  public void sendImageMessageWithListener(ReadableMap message, String pushContent, String pushData, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    // todo: message转换成融云Message类型
+    Message msg = new Message();
+    imClient.sendImageMessage(msg, pushContent, pushData, new RongIMClient.SendImageMessageWithUploadListenerCallback<Message>() {
+      // 消息已存储数据库
+      @Override
+      public void onAttached(Message message, RongIMClient.UploadImageStatusListener watcher) {
+
+      }
+      // 消息发送进度
+      @Override
+      public void onProgress(Message message, int progress) {
+
+      }
+      // 消息发送成功
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      // 消息发送失败
+      @Override
+      public void onError(Message message, RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 获取会话消息提醒状态。
+   * @param type
+   * @param targetId
+   * @param promise
+   */
+  @ReactMethod
+  public void getConversationNotificationStatus(String type, String targetId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.getConversationNotificationStatus(Conversation.ConversationType.valueOf(type), targetId,
+            new RongIMClient.ResultCallback<Conversation.ConversationNotificationStatus>() {
+      @Override
+      public void onSuccess(Conversation.ConversationNotificationStatus status) {
+        // todo: 转换notificationStatus
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 设置会话消息提醒状态
+   * @param type
+   * @param targetId
+   * @param notificationStatus 是否屏蔽, DO_NOT_DISTURB 或 NOTIFY
+   * @param promise
+   */
+  @ReactMethod
+  public void setConversationNotificationStatus(String type, String targetId, String notificationStatus, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.setConversationNotificationStatus(Conversation.ConversationType.valueOf(type), targetId,
+            Conversation.ConversationNotificationStatus.valueOf(notificationStatus.toUpperCase()),
+            new RongIMClient.ResultCallback<Conversation.ConversationNotificationStatus>() {
+      @Override
+      public void onSuccess(Conversation.ConversationNotificationStatus status) {
+        // todo: 转换notificationStatus
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 获取当前连接用户的信息, 等同connect之后返回的userId
+   */
+  @ReactMethod
+  public void getCurrentUserId(final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    promise.resolve(imClient.getCurrentUserId());
+  }
+
+  /**
+   * 获取本地时间与服务器时间的差值。 消息发送成功后，sdk 会与服务器同步时间，消息所在数据库中存储的时间就是服务器时间
+   * System.currentTimeMillis() - getDeltaTime()可以获取服务器当前时间。
+   */
+  @ReactMethod
+  public void getDeltaTime(final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    promise.resolve(imClient.getDeltaTime());
+  }
+
+  /**
+   * 根据时间戳清除指定类型，目标Id 的某一会话消息未读状态
+   * @param type
+   * @param targetId
+   * @param timestamp
+   * @param promise
+   */
+  @ReactMethod
+  public void clearMessagesUnreadStatus(String type, String targetId, long timestamp, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.clearMessagesUnreadStatus(Conversation.ConversationType.valueOf(type), targetId, timestamp,
+            new RongIMClient.OperationCallback<Boolean>() {
+      @Override
+      public void onSuccess(Boolean result) {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据 messageId 获取消息发送时间
+   * @param messageId
+   * @param promise
+   */
+  @ReactMethod
+  public void getSendTimeByMessageId(int messageId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    long timestamp = imClient.getSendTimeByMessageId(messageId);
+    promise.resolve(timestamp);
+  }
+
+  /**
+   * 获取用户在线状态
+   * @param userId
+   * @param promise
+   */
+  @ReactMethod
+  public void getUserOnlineStatus(String userId, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.getUserOnlineStatus(userId, new IRongCallback.IGetUserOnlineStatusCallback<ArrayList<UserOnlineStatusInfo>>() {
+      @Override
+      public void onSuccess(ArrayList<UserOnlineStatusInfo> userOnlineStatusInfoList) {
+        // todo: parse userOnlineStatusInfoList
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(int errCode) {
+        // todo
+        promise.reject("" + errCode);
+      }
+    });
+  }
+
+  /**
+   * 设置当前用户在线状态
+   * @param status
+   * @param promise
+   */
+  @ReactMethod
+  public void setUserOnlineStatus(int status, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.setUserOnlineStatus(status, new IRongCallback.IGetUserOnlineStatusCallback() {
+      @Override
+      public void onSuccess() {
+        // todo
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(int errCode) {
+        // todo
+        promise.reject("" + errCode);
+      }
+    });
+  }
+
+  /**
+   * 获取登录者身份认证信息。 第三方厂商通过使用此接口获取 token，然后与厂商的注册信息一起去融云服务器做认证。
+   * @param promise
+   */
+  @ReactMethod
+  public void getVendorToken(final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.getVendorToken(new RongIMClient.ResultCallback<String>() {
+      @Override
+      public void onSuccess(String token) {
+        promise.resolve(token);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+  }
+
+  /**
+   * 根据 uid 获取 message 对象
+   * @param uid 发送 message 成功后，服务器会给每个 message 分配一个唯一 uid
+   * @param promise
+   */
+  @ReactMethod
+  public void getMessageByUid(String uid, final Promise promise) {
+    if (imClient == null) {
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
+      return;
+    }
+    imClient.getMessageByUid(uid, new RongIMClient.ResultCallback<Message>() {
+      @Override
+      public void onSuccess(Message message) {
+        promise.resolve(Utils.convertMessage(message));
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
   }
 }
