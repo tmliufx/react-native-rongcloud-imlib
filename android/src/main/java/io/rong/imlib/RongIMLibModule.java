@@ -103,6 +103,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   @Override
   public boolean onReceived(Message message, int left) {
     this.emitEvent(RONG_MESSAGE_RECEIVED, Utils.convertMessage(message));
+    return true;
   }
 
   /**
