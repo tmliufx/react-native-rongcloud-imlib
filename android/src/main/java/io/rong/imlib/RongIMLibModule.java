@@ -130,7 +130,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   @ReactMethod
   public void connect(String token, final Promise promise) {
     if (imClient != null) {
-      promise.reject(IS_CONNECTED, '已经有连接上融云服务器的实例');
+      promise.reject(IS_CONNECTED, "已经有连接上融云服务器的实例");
       return;
     }
     imClient = RongIMClient.connect(token, new RongIMClient.ConnectCallback() {
@@ -216,7 +216,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getConversationList(RongIMClient.ResultCallback<List<Conversation>> () {
+    imClient.getConversationList(RongIMClient.ResultCallback<List<Conversation>>() {
 
       @Override
       public void onSuccess(List<Conversation> conversations) {
