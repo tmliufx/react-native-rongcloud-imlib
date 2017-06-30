@@ -22,6 +22,7 @@ import io.rong.imlib.RongIMClient;
 import io.rong.imlib.model.Conversation;
 import io.rong.imlib.model.Message;
 import io.rong.imlib.model.MessageContent;
+import io.rong.imlib.RongCommonDefine.GetMessageDirection
 
 public class RongIMLibModule extends ReactContextBaseJavaModule
   implements RongIMClient.OnReceiveMessageListener, RongIMClient.ConnectionStatusListener, LifecycleEventListener {
@@ -55,20 +56,20 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     return "RongIMLib";
   }
 
-//  @Override
-//  public void onHostResume() {
-//    this.hostActive = true;
-//  }
-//
-//  @Override
-//  public void onHostPause() {
-//    this.hostActive = false;
-//  }
-//
-//  @Override
-//  public void onHostDestroy() {
-//
-//  }
+  @Override
+  public void onHostResume() {
+    this.hostActive = true;
+  }
+
+  @Override
+  public void onHostPause() {
+    this.hostActive = false;
+  }
+
+  @Override
+  public void onHostDestroy() {
+
+  }
 
   /**
    * 事件触发，java向js传递数据
@@ -189,10 +190,27 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       return;
     }
     imClient.reconnect(new RongIMClient.ConnectCallback() {
+      /**
+       * Token 错误，在线上环境下主要是因为Token已经过期，您需要向App Server重新请求一个新的Token
+       */
       @Override
-      public void onSuccess() {
-        promise.resolve(SUCCESS);
+      public void onTokenIncorrect() {
+        promise.reject(TOKEN_INCORRECT, "token不正确");
       }
+
+      /**
+       * 连接融云成功
+       * @param userid
+       */
+      @Override
+      public void onSuccess(String userid) {
+        promise.resolve(userid);
+      }
+
+      /**
+       * 连接融云失败
+       * @param errorCode 错误码，可到官网查看错误码对应的注释
+       */
       @Override
       public void onError(RongIMClient.ErrorCode e) {
         promise.reject("" + e.getValue(), e.getMessage());
@@ -307,11 +325,12 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     }
     imClient.updateConversationInfo(Conversation.ConversationType.valueOf(type), targetId, title, portrait,
             // todo:返回类型
-            new RongIMClient.ResultCallback() {
+            new RongIMClient.ResultCallback<Object>() {
 
       // todo:返回类型
       @Override
-      public void onSuccess() {
+      public void onSuccess(Object info) {
+        // todo
         promise.resolve(SUCCESS);
       }
       @Override
@@ -386,7 +405,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     imClient.getTotalUnreadCount(new RongIMClient.ResultCallback<Integer>() {
 
       @Override
-      public void onSuccess(int count) {
+      public void onSuccess(Integer count) {
         promise.resolve(count);
       }
       @Override
@@ -411,7 +430,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     imClient.getUnreadCount(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Integer>() {
 
       @Override
-      public void onSuccess(int count) {
+      public void onSuccess(Integer count) {
         promise.resolve(count);
       }
       @Override
@@ -432,10 +451,10 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getUnreadCount(new RongIMClient.ResultCallback<int>() {
+    imClient.getUnreadCount(new RongIMClient.ResultCallback<Integer>() {
 
       @Override
-      public void onSuccess(int count) {
+      public void onSuccess(Integer count) {
         promise.resolve(count);
       }
       @Override
@@ -457,14 +476,14 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       return;
     }
     // List convTypes = new ArrayList<Conversation.ConversationType>();
-    Conversation.ConversationType[] convTypes = new ConversationType[types.size()];
+    Conversation.ConversationType[] convTypes = new Conversation.ConversationType[types.size()];
     for (int i = 0; i < types.size(); i++) {
       convTypes.add(Conversation.ConversationType.valueOf(types[i]));
     }
     imClient.getUnreadCount(convTypes, new RongIMClient.ResultCallback<Integer>() {
 
       @Override
-      public void onSuccess(int count) {
+      public void onSuccess(Integer count) {
         promise.resolve(count);
       }
       @Override
@@ -535,16 +554,16 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    * @param objectName  消息类型标识。如RC:TxtMsg，RC:ImgMsg，RC:VcMsg等。
    * @param baseMessageId  最后一条消息的 Id，获取此消息之前的 count 条消息,没有消息第一次调用应设置为:-1。
    * @param count  要获取的消息数量
-   * @param direction  要获取的消息相对于 oldestMessageId 的方向, 以message id 作为获取的起始点，时间早于该 id 则为true，晚于则为false。
+   * @param direction  要获取的消息相对于 oldestMessageId 的方向, 以message id 作为获取的起始点，时间早于该 id 则为1，晚于则为0。
    * @param promise
    */
   @ReactMethod
-  public void getHistoryMessagesByTypeAndDirection(String type, String targetId, String objectName, int baseMessageId, int count, Boolean direction, final Promise promise) {
+  public void getHistoryMessagesByTypeAndDirection(String type, String targetId, String objectName, int baseMessageId, int count, int direction, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, baseMessageId, count, direction,
+    imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, baseMessageId, count, GetMessageDirection.valueOf(direction),
             new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
