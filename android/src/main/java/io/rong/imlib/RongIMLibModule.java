@@ -22,7 +22,7 @@ import io.rong.imlib.RongIMClient;
 import io.rong.imlib.model.Conversation;
 import io.rong.imlib.model.Message;
 import io.rong.imlib.model.MessageContent;
-import io.rong.imlib.RongCommonDefine.GetMessageDirection
+import io.rong.imlib.RongCommonDefine.GetMessageDirection;
 
 public class RongIMLibModule extends ReactContextBaseJavaModule
   implements RongIMClient.OnReceiveMessageListener, RongIMClient.ConnectionStatusListener, LifecycleEventListener {
@@ -475,10 +475,9 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    // List convTypes = new ArrayList<Conversation.ConversationType>();
     Conversation.ConversationType[] convTypes = new Conversation.ConversationType[types.size()];
     for (int i = 0; i < types.size(); i++) {
-      convTypes.add(Conversation.ConversationType.valueOf(types[i]));
+      convTypes[i] = Conversation.ConversationType.valueOf(types.getString(i));
     }
     imClient.getUnreadCount(convTypes, new RongIMClient.ResultCallback<Integer>() {
 
@@ -554,16 +553,16 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    * @param objectName  消息类型标识。如RC:TxtMsg，RC:ImgMsg，RC:VcMsg等。
    * @param baseMessageId  最后一条消息的 Id，获取此消息之前的 count 条消息,没有消息第一次调用应设置为:-1。
    * @param count  要获取的消息数量
-   * @param direction  要获取的消息相对于 oldestMessageId 的方向, 以message id 作为获取的起始点，时间早于该 id 则为1，晚于则为0。
+   * @param direction  要获取的消息相对于 oldestMessageId 的方向, 以message id 作为获取的起始点，时间早于该 id 则为front，晚于则为behind。
    * @param promise
    */
   @ReactMethod
-  public void getHistoryMessagesByTypeAndDirection(String type, String targetId, String objectName, int baseMessageId, int count, int direction, final Promise promise) {
+  public void getHistoryMessagesByTypeAndDirection(String type, String targetId, String objectName, int baseMessageId, int count, String direction, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, baseMessageId, count, GetMessageDirection.valueOf(direction),
+    imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, baseMessageId, count, GetMessageDirection.valueOf(direction.toUpperCase()),
             new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
