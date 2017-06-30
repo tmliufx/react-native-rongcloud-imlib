@@ -111,7 +111,7 @@ public class Utils {
         return ret;
     }
 
-    private static WritableMap convertConversation(Conversation conv) {
+    public static WritableMap convertConversation(Conversation conv) {
         WritableMap ret = Arguments.createMap();
         ret.putString("title", conv.getConversationTitle());
         ret.putBoolean("isTop", conv.isTop());

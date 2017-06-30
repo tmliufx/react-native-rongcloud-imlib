@@ -10,6 +10,7 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 
@@ -46,7 +47,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       RongIMClient.init(reactContext.getApplicationContext());
     }
 
-    reactContext.addLifecycleEventListener(this);
+    // reactContext.addLifecycleEventListener(this);
   }
 
   @Override
@@ -54,20 +55,20 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     return "RongIMLib";
   }
 
-  @Override
-  public void onHostResume() {
-    this.hostActive = true;
-  }
-
-  @Override
-  public void onHostPause() {
-    this.hostActive = false;
-  }
-
-  @Override
-  public void onHostDestroy() {
-
-  }
+//  @Override
+//  public void onHostResume() {
+//    this.hostActive = true;
+//  }
+//
+//  @Override
+//  public void onHostPause() {
+//    this.hostActive = false;
+//  }
+//
+//  @Override
+//  public void onHostDestroy() {
+//
+//  }
 
   /**
    * 事件触发，java向js传递数据
@@ -187,8 +188,17 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.reconnect();
-    promise.resolve(SUCCESS);
+    imClient.reconnect(new RongIMClient.ConnectCallback() {
+      @Override
+      public void onSuccess() {
+        promise.resolve(SUCCESS);
+      }
+      @Override
+      public void onError(RongIMClient.ErrorCode e) {
+        promise.reject("" + e.getValue(), e.getMessage());
+      }
+    });
+
   }
 
   /**
@@ -198,7 +208,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   @ReactMethod
   public void logout(final Promise promise) {
     if (imClient == null) {
-      promise.reject(NOT_CONNECTED, "没有连接融云服务器的实例，必须连接上才能调用");
+      promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
     imClient.logout();
@@ -296,10 +306,12 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       return;
     }
     imClient.updateConversationInfo(Conversation.ConversationType.valueOf(type), targetId, title, portrait,
-            new RongIMClient.ResultCallback<T>() {
+            // todo:返回类型
+            new RongIMClient.ResultCallback() {
 
+      // todo:返回类型
       @Override
-      public void onSuccess(T t) {
+      public void onSuccess() {
         promise.resolve(SUCCESS);
       }
       @Override
@@ -348,7 +360,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.removeConversation(Conversation.ConversationType.valueOf(type), targetId, isTop, new RongIMClient.ResultCallback<Boolean>() {
+    imClient.setConversationToTop(Conversation.ConversationType.valueOf(type), targetId, isTop, new RongIMClient.ResultCallback<Boolean>() {
 
       @Override
       public void onSuccess(Boolean result) {
@@ -371,7 +383,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getTotalUnreadCount(new RongIMClient.ResultCallback<int>() {
+    imClient.getTotalUnreadCount(new RongIMClient.ResultCallback<Integer>() {
 
       @Override
       public void onSuccess(int count) {
@@ -396,7 +408,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getUnreadCount(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<int>() {
+    imClient.getUnreadCount(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Integer>() {
 
       @Override
       public void onSuccess(int count) {
@@ -444,9 +456,10 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    List convTypes = new ArrayList<Conversation.ConversationType>();
+    // List convTypes = new ArrayList<Conversation.ConversationType>();
+    Conversation.ConversationType[] convTypes = new ConversationType[types.size()];
     for (int i = 0; i < types.size(); i++) {
-      convTypes.add(Conversation.ConversationType.valueOf(type[i]));
+      convTypes.add(Conversation.ConversationType.valueOf(types[i]));
     }
     imClient.getUnreadCount(convTypes, new RongIMClient.ResultCallback<Integer>() {
 
@@ -526,12 +539,12 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    * @param promise
    */
   @ReactMethod
-  public void getHistoryMessagesByTypeAndDirection(Strign type, String targetId, String objectName, int baseMessageId, int count, Boolean direction, final Promise promise) {
+  public void getHistoryMessagesByTypeAndDirection(String type, String targetId, String objectName, int baseMessageId, int count, Boolean direction, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, baseMessageId, count, direction.toUppercase(),
+    imClient.getHistoryMessages(Conversation.ConversationType.valueOf(type), targetId, objectName, baseMessageId, count, direction,
             new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
