@@ -14,6 +14,7 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
@@ -683,7 +684,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.searchMessages(Conversation.ConversationType.valueOf(type), targetId, keyword, count, beginTime
+    imClient.searchMessages(Conversation.ConversationType.valueOf(type), targetId, keyword, count, beginTime,
             new RongIMClient.ResultCallback<List<Message>>() {
       @Override
       public void onSuccess(List<Message> messages) {
@@ -850,16 +851,16 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   /**
    * 根据 messageId 设置消息的发送状态。用于UI标记消息为正在发送，对方已接收等状态。
    * @param messageId
-   * @param status
+   * @param status CANCELED DESTORYED FIALED READ RECEIVED SENDING SENT
    * @param promise
    */
   @ReactMethod
-  public void setMessageSentStatus(int messageId, int status, final Promise promise) {
+  public void setMessageSentStatus(int messageId, String status, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.setMessageSentStatus(messageId, new Message.SentStatus(status), new RongIMClient.ResultCallback<Boolean>() {
+    imClient.setMessageSentStatus(messageId, Message.SentStatus.valueOf(status), new RongIMClient.ResultCallback<Boolean>() {
       @Override
       public void onSuccess(Boolean success) {
         promise.resolve(SUCCESS);
@@ -883,7 +884,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getTextMessageDraft(Conversatin.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<String>() {
+    imClient.getTextMessageDraft(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<String>() {
       @Override
       public void onSuccess(String draft) {
         promise.resolve(draft);
@@ -908,7 +909,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.saveTextMessageDraft(Conversatin.ConversationType.valueOf(type), targetId, content, new RongIMClient.ResultCallback<Boolean>() {
+    imClient.saveTextMessageDraft(Conversation.ConversationType.valueOf(type), targetId, content, new RongIMClient.ResultCallback<Boolean>() {
       @Override
       public void onSuccess(Boolean result) {
         promise.resolve(SUCCESS);
@@ -933,7 +934,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.clearTextMessageDraft(Conversatin.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
+    imClient.clearTextMessageDraft(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
       @Override
       public void onSuccess(Boolean result) {
         promise.resolve(SUCCESS);
@@ -985,7 +986,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     }
     // todo:确定是否这样转换
     MessageContent msgContent = Utils.convertToMessageContent(content);
-    imClient.insertMessage(Conversatin.ConversationType.valueOf(type), targetId, senderId, msgContent, sentTime,
+    imClient.insertMessage(Conversation.ConversationType.valueOf(type), targetId, senderId, msgContent, sentTime,
             new RongIMClient.ResultCallback<Message>() {
       @Override
       public void onSuccess(Message message) {
@@ -1015,7 +1016,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     }
     // todo:确定是否这样转换
     MessageContent msgContent = Utils.convertToMessageContent(content);
-    imClient.insertMessage(Conversatin.ConversationType.valueOf(type), targetId, senderId, msgContent,
+    imClient.insertMessage(Conversation.ConversationType.valueOf(type), targetId, senderId, msgContent,
             new RongIMClient.ResultCallback<Message>() {
       @Override
       public void onSuccess(Message message) {
@@ -1038,15 +1039,15 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    * @param promise
    */
   @ReactMethod
-  public void sendMessageByConvType(String type, String targetId, ReadableArray content, String pushContent, String pushData, final Promise promise) {
+  public void sendMessageByConvType(String type, String targetId, ReadableMap content, String pushContent, String pushData, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
     // todo:确定是否这样转换
     MessageContent msgContent = Utils.convertToMessageContent(content);
-    imClient.sendMessage(Conversatin.ConversationType.valueOf(type), targetId, msgContent, pushContent, pushData,
-            new IRongCallback.ISendMessageCallback<Message>() {
+    imClient.sendMessage(Conversation.ConversationType.valueOf(type), targetId, msgContent, pushContent, pushData,
+            new IRongCallback.ISendMessageCallback() {
       // 消息已存储数据库
       @Override
       public void onAttached(Message message) {
@@ -1080,7 +1081,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     }
     // todo: message转换成融云Message类型
     Message msg = new Message();
-    imClient.sendMessage(msg, pushContent, pushData, new IRongCallback.ISendMessageCallback<Message>() {
+    imClient.sendMessage(msg, pushContent, pushData, new IRongCallback.ISendMessageCallback() {
       // 消息已存储数据库
       @Override
       public void onAttached(Message message) {
@@ -1116,8 +1117,8 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     }
     // todo:确定是否这样转换
     MessageContent msgContent = Utils.convertToMessageContent(content);
-    imClient.sendImageMessage(Conversatin.ConversationType.valueOf(type), targetId, msgContent, pushContent, pushData,
-            new RongIMClient.SendImageMessageCallback<Message>() {
+    imClient.sendImageMessage(Conversation.ConversationType.valueOf(type), targetId, msgContent, pushContent, pushData,
+            new RongIMClient.SendImageMessageCallback() {
       // 消息已存储数据库
       @Override
       public void onAttached(Message message) {
@@ -1156,7 +1157,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     }
     // todo: message转换成融云Message类型
     Message msg = new Message();
-    imClient.sendImageMessage(msg, pushContent, pushData, new RongIMClient.SendImageMessageCallback<Message>() {
+    imClient.sendImageMessage(msg, pushContent, pushData, new RongIMClient.SendImageMessageCallback() {
       // 消息已存储数据库
       @Override
       public void onAttached(Message message) {
@@ -1195,7 +1196,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     }
     // todo: message转换成融云Message类型
     Message msg = new Message();
-    imClient.sendImageMessage(msg, pushContent, pushData, new RongIMClient.SendImageMessageWithUploadListenerCallback<Message>() {
+    imClient.sendImageMessage(msg, pushContent, pushData, new RongIMClient.SendImageMessageWithUploadListenerCallback() {
       // 消息已存储数据库
       @Override
       public void onAttached(Message message, RongIMClient.UploadImageStatusListener watcher) {
@@ -1299,20 +1300,19 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   }
 
   /**
-   * 根据时间戳清除指定类型，目标Id 的某一会话消息未读状态
+   * 清除指定类型，targetId 的某一会话消息未读状态。
    * @param type
    * @param targetId
    * @param timestamp
    * @param promise
    */
   @ReactMethod
-  public void clearMessagesUnreadStatus(String type, String targetId, long timestamp, final Promise promise) {
+  public void clearMessagesUnreadStatus(String type, String targetId, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.clearMessagesUnreadStatus(Conversation.ConversationType.valueOf(type), targetId, timestamp,
-            new RongIMClient.OperationCallback<Boolean>() {
+    imClient.clearMessagesUnreadStatus(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
       @Override
       public void onSuccess(Boolean result) {
         promise.resolve(SUCCESS);
@@ -1350,7 +1350,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.getUserOnlineStatus(userId, new IRongCallback.IGetUserOnlineStatusCallback<ArrayList<UserOnlineStatusInfo>>() {
+    imClient.getUserOnlineStatus(userId, new IRongCallback.IGetUserOnlineStatusCallback() {
       @Override
       public void onSuccess(ArrayList<UserOnlineStatusInfo> userOnlineStatusInfoList) {
         // todo: parse userOnlineStatusInfoList
@@ -1375,7 +1375,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.setUserOnlineStatus(status, new IRongCallback.IGetUserOnlineStatusCallback() {
+    imClient.setUserOnlineStatus(status, new IRongCallback.ISetUserOnlineStatusCallback() {
       @Override
       public void onSuccess() {
         // todo
