@@ -89,16 +89,16 @@
         <!--必选： SDK 核心功能-->
 
         <!-- 推送处理 -->
-        <!--<receiver-->
-                <!--android:exported="true"-->
-                <!--android:name=".PushReceiver">-->
-            <!--<intent-filter>-->
-                <!--<action android:name="io.rong.push.intent.MESSAGE_ARRIVED" />-->
-                <!--<action android:name="io.rong.push.intent.MI_MESSAGE_ARRIVED" />-->
-                <!--<action android:name="io.rong.push.intent.MESSAGE_CLICKED" />-->
-                <!--<action android:name="io.rong.push.intent.MI_MESSAGE_CLICKED" />-->
-            <!--</intent-filter>-->
-        <!--</receiver>-->
+        <receiver
+                android:exported="true"
+                android:name=".PushReceiver">
+            <intent-filter>
+                <action android:name="io.rong.push.intent.MESSAGE_ARRIVED" />
+                <action android:name="io.rong.push.intent.MI_MESSAGE_ARRIVED" />
+                <action android:name="io.rong.push.intent.MESSAGE_CLICKED" />
+                <action android:name="io.rong.push.intent.MI_MESSAGE_CLICKED" />
+            </intent-filter>
+        </receiver>
         <!-- end -->
     </application>
 

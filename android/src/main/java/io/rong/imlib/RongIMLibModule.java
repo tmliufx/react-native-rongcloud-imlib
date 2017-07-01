@@ -65,6 +65,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
 
   @Override
   public void initialize() {
+
     RongIMClient.setOnReceiveMessageListener(this);
     RongIMClient.setConnectionStatusListener(this);
   }
@@ -95,8 +96,8 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    * @param type
    * @param data
    */
-  protected void emitEvent(String type, Object data) {
-    ReactApplicationContext context = this.getReactApplicationContext();
+  protected void emitEvent(String type, WritableMap data) {
+    ReactContext context = this.getReactApplicationContext();
     context.getJSModule(RCTNativeAppEventEmitter.class)
             .emit(type, data);
   }
