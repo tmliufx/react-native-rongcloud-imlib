@@ -1300,19 +1300,20 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   }
 
   /**
-   * 清除指定类型，targetId 的某一会话消息未读状态。
+   * 根据时间戳清除指定类型，目标Id 的某一会话消息未读状态
    * @param type
    * @param targetId
    * @param timestamp
    * @param promise
    */
   @ReactMethod
-  public void clearMessagesUnreadStatus(String type, String targetId, final Promise promise) {
+  public void clearMessagesUnreadStatusByTime(String type, String targetId, long timestamp, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
     }
-    imClient.clearMessagesUnreadStatus(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Boolean>() {
+    imClient.clearMessagesUnreadStatus(Conversation.ConversationType.valueOf(type), targetId, timestamp,
+            new RongIMClient.OperationCallback() {
       @Override
       public void onSuccess(Boolean result) {
         promise.resolve(SUCCESS);
