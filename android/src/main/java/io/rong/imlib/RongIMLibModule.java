@@ -1009,7 +1009,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    * @param promise
    */
   @ReactMethod
-  public void insertMessageWithSentTime(String type, String targetId, String senderId, ReadableMap content, final Promise promise) {
+  public void insertMessage(String type, String targetId, String senderId, ReadableMap content, final Promise promise) {
     if (imClient == null) {
       promise.reject(CLIENT_NONEXISTENT, "im客户端实例不存在");
       return;
@@ -1315,7 +1315,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     imClient.clearMessagesUnreadStatus(Conversation.ConversationType.valueOf(type), targetId, timestamp,
             new RongIMClient.OperationCallback() {
       @Override
-      public void onSuccess(Boolean result) {
+      public void onSuccess() {
         promise.resolve(SUCCESS);
       }
       @Override
