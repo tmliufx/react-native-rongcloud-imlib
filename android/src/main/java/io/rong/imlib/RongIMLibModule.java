@@ -128,23 +128,23 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     return true;
   }
 
-  /**
-   * 返回 RongIMClient IM 客户端核心类的实例
-   * @return
-   */
-  @ReactMethod
-  public RongIMClient getClient() {
-    return imClient;
-  }
-
-  /**
-   * 返回 IMLib 接口类实例
-   * @return
-   */
-  @ReactMethod
-  public RongIMClient getInstance() {
-    return imClient.getInstance();
-  }
+//  /**
+//   * 返回 RongIMClient IM 客户端核心类的实例
+//   * @return
+//   */
+//  @ReactMethod
+//  public void getClient(final Promise promise) {
+//    promise.resolve(imClient.toString());
+//  }
+//
+//  /**
+//   * 返回 IMLib 接口类实例
+//   * @return
+//   */
+//  @ReactMethod
+//  public void getInstance(final Promise promise) {
+//    promise.resolve(imClient.getInstance().toString());
+//  }
 
   /**
    * 连接服务器，在整个应用程序全局，只需要调用一次，需在 init(Context) 之后调用。
