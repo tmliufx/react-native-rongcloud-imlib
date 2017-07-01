@@ -64,6 +64,18 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   }
 
   @Override
+  public void initialize() {
+    RongIMClient.setOnReceiveMessageListener(this);
+    RongIMClient.setConnectionStatusListener(this);
+  }
+
+  @Override
+  public void onCatalystInstanceDestroy() {
+    RongIMClient.setOnReceiveMessageListener(null);
+    RongIMClient.getInstance().disconnect();
+  }
+
+  @Override
   public void onHostResume() {
     this.hostActive = true;
   }
@@ -95,10 +107,11 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    */
   @Override
   public void onChanged(ConnectionStatus status) {
+    Toast.makeText(this.getReactApplicationContext(), "连接状态改变", Toast.LENGTH_SHORT).show();
     WritableMap map = Arguments.createMap();
     map.putInt("code", status.getValue());
     map.putString("message", status.getMessage());
-    this.emitEvent(RONG_CONNECTION_STATUS_CHANGED, map);
+    emitEvent(RONG_CONNECTION_STATUS_CHANGED, map);
   }
 
   /**
@@ -109,7 +122,8 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    */
   @Override
   public boolean onReceived(Message message, int left) {
-    this.emitEvent(RONG_MESSAGE_RECEIVED, Utils.convertMessage(message));
+    Toast.makeText(this.getReactApplicationContext(), "收到消息", Toast.LENGTH_SHORT).show();
+    emitEvent(RONG_MESSAGE_RECEIVED, Utils.convertMessage(message));
     return true;
   }
 
