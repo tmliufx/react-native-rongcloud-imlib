@@ -5,6 +5,7 @@
 package io.rong.imlib;
 
 import android.widget.Toast;
+import android.context.Context;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
@@ -63,18 +64,17 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     return "RongIMLib";
   }
 
-  @Override
-  public void initialize() {
+//  @Override
+//  public void initialize() {
+//    RongIMClient.setOnReceiveMessageListener(this);
+//    RongIMClient.setConnectionStatusListener(this);
+//  }
 
-    RongIMClient.setOnReceiveMessageListener(this);
-    RongIMClient.setConnectionStatusListener(this);
-  }
-
-  @Override
-  public void onCatalystInstanceDestroy() {
-    RongIMClient.setOnReceiveMessageListener(null);
-    RongIMClient.getInstance().disconnect();
-  }
+//  @Override
+//  public void onCatalystInstanceDestroy() {
+//    RongIMClient.setOnReceiveMessageListener(null);
+//    RongIMClient.getInstance().disconnect();
+//  }
 
   @Override
   public void onHostResume() {
@@ -97,7 +97,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    * @param data
    */
   protected void emitEvent(String type, WritableMap data) {
-    ReactContext context = this.getReactApplicationContext();
+    ReactApplicationContext context = this.getReactApplicationContext();
     context.getJSModule(RCTNativeAppEventEmitter.class)
             .emit(type, data);
   }
@@ -154,6 +154,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    */
   @ReactMethod
   public void connect(String token, final Promise promise) {
+    final Context context = this.getReactApplicationContext();
     if (imClient != null) {
       promise.reject(IS_CONNECTED, "已经有连接上融云服务器的实例");
       return;
@@ -173,6 +174,19 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
        */
       @Override
       public void onSuccess(String userid) {
+        RongIMClient.setOnReceiveMessageListener(new RongIMClient.OnReceiveMessageListener() {
+          @Override
+          public boolean onReceived(Message message, int i) {
+            Toast.makeText(context, "收到消息", Toast.LENGTH_LONG).show();
+            return false;
+          }
+        });
+        RongIMClient.setConnectionStatusListener(new RongIMClient.ConnectionStatusListener() {
+          @Override
+          public void onChanged(ConnectionStatus connectionStatus) {
+            Toast.makeText(context, "连接状态变更", Toast.LENGTH_LONG).show();
+          }
+        });
         promise.resolve(userid);
       }
 
