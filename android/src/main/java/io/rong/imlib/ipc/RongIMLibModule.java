@@ -5,6 +5,21 @@
 package io.rong.imlib.ipc;
 
 import android.widget.Toast;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
+import android.net.Uri;
+import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
+import android.util.Base64;
+import android.util.Log;
+
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
@@ -31,14 +46,11 @@ import io.rong.imlib.model.UserOnlineStatusInfo;
 import io.rong.imlib.RongCommonDefine.GetMessageDirection;
 import io.rong.imlib.IRongCallback;
 
-public class RongIMLibModule extends ReactContextBaseJavaModule
-  implements RongIMClient.OnReceiveMessageListener, RongIMClient.ConnectionStatusListener, LifecycleEventListener {
+public class RongIMLibModule extends ReactContextBaseJavaModule implements RongIMClient.OnReceiveMessageListener, RongIMClient.ConnectionStatusListener, LifecycleEventListener {
 
   static boolean isIMClientInited = false;
 
   boolean hostActive = true;
-
-  RongIMClient imClient = null;
 
   private static final String SUCCESS = "SUCCESS";
   private static final String FAIL = "FAIL";
@@ -75,21 +87,6 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     RongIMClient.getInstance().disconnect();
   }
 
-  @Override
-  public void onHostResume() {
-    this.hostActive = true;
-  }
-
-  @Override
-  public void onHostPause() {
-    this.hostActive = false;
-  }
-
-  @Override
-  public void onHostDestroy() {
-
-  }
-
   /**
    * 事件触发，java向js传递数据
    * @param type
@@ -111,7 +108,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     WritableMap map = Arguments.createMap();
     map.putInt("code", status.getValue());
     map.putString("message", status.getMessage());
-    emitEvent(RONG_CONNECTION_STATUS_CHANGED, map);
+    this.emitEvent(RONG_CONNECTION_STATUS_CHANGED, map);
   }
 
   /**
@@ -124,6 +121,35 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
   public boolean onReceived(Message message, int left) {
     Toast.makeText(this.getReactApplicationContext(), "收到消息", Toast.LENGTH_SHORT).show();
     emitEvent(RONG_MESSAGE_RECEIVED, Utils.convertMessage(message));
+
+    if (!hostActive) {
+      Context context = getReactApplicationContext();
+      NotificationManager mNotificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+      NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context);
+      MessageContent content = message.getContent();
+      String title = content.getUserInfo() != null ? content.getUserInfo().getName() : message.getSenderUserId();
+
+      String contentString = Utils.convertMessageContentToString(content);
+      mBuilder.setSmallIcon(context.getApplicationInfo().icon)
+              .setContentTitle(title)
+              .setContentText(contentString)
+              .setTicker(contentString)
+              .setAutoCancel(true)
+              .setDefaults(Notification.DEFAULT_ALL);
+
+      Intent intent = new Intent();
+      intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      Uri.Builder builder = Uri.parse("rong://" + context.getPackageName()).buildUpon();
+
+      builder.appendPath("conversation").appendPath(message.getConversationType().getName())
+              .appendQueryParameter("targetId", message.getTargetId())
+              .appendQueryParameter("title", message.getTargetId());
+      intent.setData(builder.build());
+      mBuilder.setContentIntent(PendingIntent.getActivity(context, 0, intent, 0));
+
+      Notification notification = mBuilder.build();
+      mNotificationManager.notify(1000, notification);
+    }
     return true;
   }
 
@@ -145,6 +171,8 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
 //    promise.resolve(imClient.getInstance().toString());
 //  }
 
+  RongIMClient imClient = null;
+
   /**
    * 连接服务器，在整个应用程序全局，只需要调用一次，需在 init(Context) 之后调用。
    * 如果调用此接口遇到连接失败，SDK 会自动启动重连机制进行最多10次重连，分别是1, 2, 4, 8, 16, 32, 64, 128, 256, 512秒后。 在这之后如果仍没有连接成功，还会在当检测到设备网络状态变化时再次进行重连。
@@ -158,21 +186,6 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       promise.reject(IS_CONNECTED, "已经有连接上融云服务器的实例");
       return;
     }
-
-//    RongIMClient.setOnReceiveMessageListener(new RongIMClient.OnReceiveMessageListener() {
-//      @Override
-//      public boolean onReceived(Message message, int i) {
-//        Toast.makeText(self.getReactApplicationContext(), "收到消息", Toast.LENGTH_LONG).show();
-//        return true;
-//      }
-//    });
-//    RongIMClient.setConnectionStatusListener(new RongIMClient.ConnectionStatusListener() {
-//      @Override
-//      public void onChanged(ConnectionStatus connectionStatus) {
-//        Toast.makeText(self.getReactApplicationContext(), "连接状态变更", Toast.LENGTH_LONG).show();
-//
-//      }
-//    });
 
     imClient = RongIMClient.connect(token, new RongIMClient.ConnectCallback() {
       /**
@@ -1464,5 +1477,20 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
         promise.reject("" + e.getValue(), e.getMessage());
       }
     });
+  }
+
+  @Override
+  public void onHostResume() {
+    this.hostActive = true;
+  }
+
+  @Override
+  public void onHostPause() {
+    this.hostActive = false;
+  }
+
+  @Override
+  public void onHostDestroy() {
+
   }
 }
