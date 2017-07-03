@@ -2,10 +2,9 @@
  * Created By Javen Leung on June/30/2017
  * 融云 Android SDK 版本 2.8.12
  */
-package io.rong.imlib;
+package io.rong.imlib.ipc;
 
 import android.widget.Toast;
-import android.context.Context;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
@@ -64,17 +63,17 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
     return "RongIMLib";
   }
 
-//  @Override
-//  public void initialize() {
-//    RongIMClient.setOnReceiveMessageListener(this);
-//    RongIMClient.setConnectionStatusListener(this);
-//  }
+  @Override
+  public void initialize() {
+    RongIMClient.setOnReceiveMessageListener(this);
+    RongIMClient.setConnectionStatusListener(this);
+  }
 
-//  @Override
-//  public void onCatalystInstanceDestroy() {
-//    RongIMClient.setOnReceiveMessageListener(null);
-//    RongIMClient.getInstance().disconnect();
-//  }
+  @Override
+  public void onCatalystInstanceDestroy() {
+    RongIMClient.setOnReceiveMessageListener(null);
+    RongIMClient.getInstance().disconnect();
+  }
 
   @Override
   public void onHostResume() {
@@ -160,19 +159,20 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
       return;
     }
 
-    RongIMClient.setOnReceiveMessageListener(new RongIMClient.OnReceiveMessageListener() {
-      @Override
-      public boolean onReceived(Message message, int i) {
-        Toast.makeText(self.getReactApplicationContext(), "收到消息", Toast.LENGTH_LONG).show();
-        return true;
-      }
-    });
-    RongIMClient.setConnectionStatusListener(new RongIMClient.ConnectionStatusListener() {
-      @Override
-      public void onChanged(ConnectionStatus connectionStatus) {
-        Toast.makeText(self.getReactApplicationContext(), "连接状态变更", Toast.LENGTH_LONG).show();
-      }
-    });
+//    RongIMClient.setOnReceiveMessageListener(new RongIMClient.OnReceiveMessageListener() {
+//      @Override
+//      public boolean onReceived(Message message, int i) {
+//        Toast.makeText(self.getReactApplicationContext(), "收到消息", Toast.LENGTH_LONG).show();
+//        return true;
+//      }
+//    });
+//    RongIMClient.setConnectionStatusListener(new RongIMClient.ConnectionStatusListener() {
+//      @Override
+//      public void onChanged(ConnectionStatus connectionStatus) {
+//        Toast.makeText(self.getReactApplicationContext(), "连接状态变更", Toast.LENGTH_LONG).show();
+//
+//      }
+//    });
 
     imClient = RongIMClient.connect(token, new RongIMClient.ConnectCallback() {
       /**

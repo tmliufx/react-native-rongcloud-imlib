@@ -1,4 +1,4 @@
-package io.rong.imlib;
+package io.rong.imlib.ipc;
 
 import android.app.Notification;
 import android.app.NotificationManager;

@@ -1,4 +1,4 @@
-package io.rong.imlib;
+package io.rong.imlib.ipc;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;
