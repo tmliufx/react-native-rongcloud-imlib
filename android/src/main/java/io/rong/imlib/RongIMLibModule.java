@@ -154,11 +154,26 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
    */
   @ReactMethod
   public void connect(String token, final Promise promise) {
-    final Context context = this.getReactApplicationContext();
+    final RongIMLibModule self = this;
     if (imClient != null) {
       promise.reject(IS_CONNECTED, "已经有连接上融云服务器的实例");
       return;
     }
+
+    RongIMClient.setOnReceiveMessageListener(new RongIMClient.OnReceiveMessageListener() {
+      @Override
+      public boolean onReceived(Message message, int i) {
+        Toast.makeText(self.getReactApplicationContext(), "收到消息", Toast.LENGTH_LONG).show();
+        return true;
+      }
+    });
+    RongIMClient.setConnectionStatusListener(new RongIMClient.ConnectionStatusListener() {
+      @Override
+      public void onChanged(ConnectionStatus connectionStatus) {
+        Toast.makeText(self.getReactApplicationContext(), "连接状态变更", Toast.LENGTH_LONG).show();
+      }
+    });
+
     imClient = RongIMClient.connect(token, new RongIMClient.ConnectCallback() {
       /**
        * Token 错误，在线上环境下主要是因为Token已经过期，您需要向App Server重新请求一个新的Token
@@ -174,19 +189,6 @@ public class RongIMLibModule extends ReactContextBaseJavaModule
        */
       @Override
       public void onSuccess(String userid) {
-        RongIMClient.setOnReceiveMessageListener(new RongIMClient.OnReceiveMessageListener() {
-          @Override
-          public boolean onReceived(Message message, int i) {
-            Toast.makeText(context, "收到消息", Toast.LENGTH_LONG).show();
-            return false;
-          }
-        });
-        RongIMClient.setConnectionStatusListener(new RongIMClient.ConnectionStatusListener() {
-          @Override
-          public void onChanged(ConnectionStatus connectionStatus) {
-            Toast.makeText(context, "连接状态变更", Toast.LENGTH_LONG).show();
-          }
-        });
         promise.resolve(userid);
       }
 
