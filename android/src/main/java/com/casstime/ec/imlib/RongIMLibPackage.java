@@ -1,4 +1,4 @@
-package io.rong.imlib.ipc;
+package com.casstime.ec.imlib;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;

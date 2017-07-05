@@ -1,4 +1,4 @@
-package io.rong.imlib.ipc;
+package com.casstime.ec.imlib;
 
 import android.content.Context;
 import android.widget.Toast;

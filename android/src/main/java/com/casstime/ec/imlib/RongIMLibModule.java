@@ -2,7 +2,7 @@
  * Created By Javen Leung on June/30/2017
  * 融云 Android SDK 版本 2.8.12
  */
-package io.rong.imlib.ipc;
+package com.casstime.ec.imlib;
 
 import android.app.Notification;
 import android.app.NotificationManager;
