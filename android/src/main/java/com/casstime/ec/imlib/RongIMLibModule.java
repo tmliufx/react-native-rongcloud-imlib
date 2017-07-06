@@ -244,6 +244,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
       return;
     }
     imClient.logout();
+    imClient = null;
     promise.resolve(SUCCESS);
   }
 
