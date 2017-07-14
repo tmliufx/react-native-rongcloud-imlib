@@ -34,6 +34,7 @@ import io.rong.imlib.RongIMClient;
 import io.rong.imlib.model.Conversation;
 import io.rong.imlib.model.Message;
 import io.rong.imlib.model.MessageContent;
+import io.rong.imlib.model.UserInfo;
 import io.rong.message.CommandNotificationMessage;
 import io.rong.message.ImageMessage;
 import io.rong.message.TextMessage;
@@ -46,14 +47,20 @@ public class Utils {
 
     public static WritableMap convertMessage(Message message) {
         WritableMap ret = Arguments.createMap();
-        ret.putString("senderId", message.getSenderUserId());
-        ret.putString("targetId", message.getTargetId());
+
+        ret.putString("UId", message.getUId());
+        ret.putMap("content", convertMessageContent(message.getContent()));
         ret.putString("conversationType", message.getConversationType().getName());
         ret.putString("extra", message.getExtra());
+        ret.putInt("messageDirection", message.getMessageDirection().getValue());
         ret.putInt("messageId", message.getMessageId());
+        ret.putString("objectName", message.getObjectName());
+        // todo: readReceiptInfo receivedStatus
         ret.putDouble("receivedTime", message.getReceivedTime());
+        ret.putString("senderUserId", message.getSenderUserId());
+        ret.putInt("sentStatus", message.getSentStatus().getValue());
         ret.putDouble("sentTime", message.getSentTime());
-        ret.putMap("content", convertMessageContent(message.getContent()));
+        ret.putString("targetId", message.getTargetId());
         return ret;
     }
 
@@ -62,30 +69,54 @@ public class Utils {
         WritableMap ret = Arguments.createMap();
         if (content instanceof TextMessage) {
             TextMessage textContent = (TextMessage)content;
-            ret.putString("type", "text");
+            ret.putString("type", "TEXT");
             ret.putString("content", textContent.getContent());
             ret.putString("extra", textContent.getExtra());
+            if (textContent.getUserInfo() != null) {
+                ret.putMap("userInfo", convertUserInfo(textContent.getUserInfo()));
+            }
         } else if (content instanceof VoiceMessage) {
             VoiceMessage voiceContent = (VoiceMessage)content;
-            ret.putString("type", "voice");
-            ret.putString("uri", voiceContent.getUri().toString());
+            ret.putString("type", "VOICE");
+            if (voiceContent.getUri() != null) {
+                ret.putString("uri", voiceContent.getUri().toString());
+            }
+            ret.putString("baseCode", voiceContent.getBase64());
             ret.putInt("duration", voiceContent.getDuration());
             ret.putString("extra", voiceContent.getExtra());
         } else if (content instanceof ImageMessage){
             ImageMessage imageContent = (ImageMessage)content;
-            ret.putString("type", "image");
+            ret.putString("type", "IMAGE");
             if (imageContent.getLocalUri() != null) {
-                ret.putString("imageUrl", imageContent.getLocalUri().toString());
+                ret.putString("localUri", imageContent.getLocalUri().toString());
             }
-            ret.putString("thumb", imageContent.getThumUri().toString());
+            if (imageContent.getRemoteUri() != null) {
+                ret.putString("remoteUri", imageContent.getRemoteUri().toString());
+            }
+            if (imageContent.getThumUri() != null) {
+                ret.putString("thumbUri", imageContent.getThumUri().toString());
+            }
             ret.putString("extra", imageContent.getExtra());
+            ret.putString("baseCode", imageContent.getBase64());
+            ret.putBoolean("isFull", imageContent.isFull());
+            ret.putBoolean("isUploadExp", imageContent.isUpLoadExp());
         } else if (content instanceof CommandNotificationMessage) {
             CommandNotificationMessage notifyContent = (CommandNotificationMessage)content;
-            ret.putString("type", "notify");
+            ret.putString("type", "COMMAND_NOTIFY");
             ret.putString("name", notifyContent.getName());
             ret.putString("data", notifyContent.getData());
         } else {
-            ret.putString("type", "unknown");
+            ret.putString("type", "UNKNOWN");
+        }
+        return ret;
+    }
+
+    public static WritableMap convertUserInfo(UserInfo userInfo) {
+        WritableMap ret = Arguments.createMap();
+        ret.putString("name", userInfo.getName());
+        ret.putString("userId", userInfo.getUserId());
+        if (userInfo.getPortraitUri() != null) {
+            ret.putString("portraitUri", userInfo.getPortraitUri().toString());
         }
         return ret;
     }
