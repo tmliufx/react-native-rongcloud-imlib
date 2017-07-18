@@ -23,4 +23,11 @@ android {
 dependencies {
     compile 'com.facebook.react:react-native:+'
     compile files('libs/Rong_IMLib.jar')
+    compile files('libs/MiPush_SDK_Client_3_2_2.jar')
+    compile(name: 'HMS-SDK-2.4.0.300', ext: 'aar')
+}
+
+repositories {
+    jcenter()
+    flatDir { dirs 'aars' }
 }
