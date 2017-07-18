@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+    buildToolsVersion "25"
 
     defaultConfig {
         minSdkVersion 16
@@ -23,4 +23,11 @@ android {
 dependencies {
     compile 'com.facebook.react:react-native:+'
     compile files('libs/Rong_IMLib.jar')
+    compile files('libs/MiPush_SDK_Client_3_2_2.jar')
+    compile(name: 'HMS-SDK-2.4.0.300', ext: 'aar')
+}
+
+repositories {
+    jcenter()
+    flatDir { dirs 'aars' }
 }
