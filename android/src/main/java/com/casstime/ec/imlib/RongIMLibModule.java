@@ -93,7 +93,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
 
   private void emitEvent(String type, WritableMap arg){
     ReactApplicationContext context = this.getReactApplicationContext();
-    context.getJSModule(RCTNativeAppEventEmitter.class)
+    context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
             .emit(type, arg);
 
   }
