@@ -9,6 +9,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
@@ -48,6 +49,7 @@ import io.rong.imlib.model.MessageContent;
 import io.rong.imlib.model.UserOnlineStatusInfo;
 import io.rong.imlib.RongCommonDefine.GetMessageDirection;
 import io.rong.imlib.IRongCallback;
+import io.rong.push.RongPushClient;
 
 
 public class RongIMLibModule extends ReactContextBaseJavaModule implements RongIMClient.OnReceiveMessageListener, RongIMClient.ConnectionStatusListener, LifecycleEventListener {
@@ -65,6 +67,22 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
 
   public RongIMLibModule(ReactApplicationContext reactContext) {
     super(reactContext);
+
+    /*
+    try {
+      ApplicationInfo applicationInfo = reactContext.getPackageManager().getApplicationInfo(reactContext.getPackageName(), PackageManager.GET_META_DATA);
+      String miAppId = applicationInfo.metaData.getString("MI_PUSH_APPID");
+      String miAppKey = applicationInfo.metaData.getString("MI_PUSH_APPKEY");
+
+      RongPushClient.registerHWPush(getReactApplicationContext());
+      RongPushClient.registerMiPush(getReactApplicationContext(),
+              miAppId,
+              miAppKey);
+//            RongPushClient.checkManifest(getApplicationContext());
+    } catch (Exception e) {
+      Log.e("config",e.getMessage());
+    }
+    */
 
     if (!isIMClientInited) {
       isIMClientInited = true;
@@ -119,13 +137,19 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
 
       Intent intent = new Intent();
       intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      intent.addCategory(Intent.CATEGORY_DEFAULT);
+      intent.setAction(Intent.ACTION_VIEW);
+      intent.setClass(getReactApplicationContext(),getCurrentActivity().getClass());
       Uri.Builder builder = Uri.parse("rong://" + context.getPackageName()).buildUpon();
 
-      builder.appendPath("conversation").appendPath(message.getConversationType().getName())
+      builder.appendPath("conversation")
+              .appendPath(message.getConversationType().getName())
               .appendQueryParameter("targetId", message.getTargetId())
-              .appendQueryParameter("title", message.getTargetId());
+              .appendQueryParameter("title", message.getTargetId())
+              .appendQueryParameter("extra",message.getExtra());
+
       intent.setData(builder.build());
-      mBuilder.setContentIntent(PendingIntent.getActivity(context, 0, intent, 0));
+      mBuilder.setContentIntent(PendingIntent.getActivity(getReactApplicationContext().getCurrentActivity(), 0, intent, 0));
 
       Notification notification = mBuilder.build();
       mNotificationManager.notify(1000, notification);

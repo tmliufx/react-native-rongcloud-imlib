@@ -27,7 +27,7 @@ public class RongIMLibPackage implements ReactPackage {
     List<NativeModule> modules = new ArrayList<>();
 
     modules.add(new RongIMLibModule(reactContext));
-
+    modules.add(new IntentDataModule(reactContext));
     return modules;
   }
 
