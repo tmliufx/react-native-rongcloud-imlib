@@ -48,7 +48,7 @@ public class Utils {
     public static WritableMap convertMessage(Message message) {
         WritableMap ret = Arguments.createMap();
 
-        ret.putString("UId", message.getUId());
+        ret.putString("messageUId", message.getUId());
         ret.putMap("content", convertMessageContent(message.getContent()));
         ret.putString("conversationType", message.getConversationType().getName());
         ret.putString("extra", message.getExtra());
@@ -146,7 +146,7 @@ public class Utils {
         WritableMap ret = Arguments.createMap();
         ret.putString("title", conv.getConversationTitle());
         ret.putBoolean("isTop", conv.isTop());
-        ret.putString("type", conv.getConversationType().getName());
+        ret.putString("conversationType", conv.getConversationType().getName().toUpperCase());
         ret.putString("targetId", conv.getTargetId());
         ret.putString("senderUserId", conv.getSenderUserId());
         ret.putInt("unreadCount", conv.getUnreadMessageCount());

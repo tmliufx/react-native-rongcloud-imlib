@@ -49,6 +49,7 @@ import io.rong.imlib.model.MessageContent;
 import io.rong.imlib.model.UserOnlineStatusInfo;
 import io.rong.imlib.RongCommonDefine.GetMessageDirection;
 import io.rong.imlib.IRongCallback;
+import io.rong.message.TextMessage;
 import io.rong.push.RongPushClient;
 
 
@@ -142,10 +143,12 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
       intent.setClass(getReactApplicationContext(),getCurrentActivity().getClass());
       Uri.Builder builder = Uri.parse("rong://" + context.getPackageName()).buildUpon();
 
+      TextMessage textContent = (TextMessage)message.getContent();
       builder.appendPath("conversation")
               .appendPath(message.getConversationType().getName())
+              .appendQueryParameter("messageUId", message.getUId())
+              .appendQueryParameter("content", textContent.getContent())
               .appendQueryParameter("targetId", message.getTargetId())
-              .appendQueryParameter("title", message.getTargetId())
               .appendQueryParameter("extra",message.getExtra());
 
       intent.setData(builder.build());
