@@ -50,7 +50,7 @@ public class Utils {
 
         ret.putString("messageUId", message.getUId());
         ret.putMap("content", convertMessageContent(message.getContent()));
-        ret.putString("conversationType", message.getConversationType().getName());
+        ret.putString("conversationType", message.getConversationType().getName().toUpperCase());
         ret.putString("extra", message.getExtra());
         ret.putInt("messageDirection", message.getMessageDirection().getValue());
         ret.putInt("messageId", message.getMessageId());
@@ -144,7 +144,6 @@ public class Utils {
 
     public static WritableMap convertConversation(Conversation conv) {
         WritableMap ret = Arguments.createMap();
-        ret.putString("title", conv.getConversationTitle());
         ret.putBoolean("isTop", conv.isTop());
         ret.putString("conversationType", conv.getConversationType().getName().toUpperCase());
         ret.putString("targetId", conv.getTargetId());
@@ -153,36 +152,35 @@ public class Utils {
         ret.putDouble("sentTime", conv.getSentTime());
         ret.putDouble("receivedTime", conv.getReceivedTime());
         ret.putDouble("latestMessageId", conv.getLatestMessageId());
-
         ret.putString("conversationTitle", conv.getConversationTitle());
-        ret.putMap("lastMessage", convertMessageContent(conv.getLatestMessage()));
+        ret.putMap("latestMessage", convertMessageContent(conv.getLatestMessage()));
         return ret;
 
     }
 
     public static MessageContent convertToMessageContent(ReadableMap map) {
         String type = map.getString("type");
-        if (type.equals("text")) {
+        if (type.equals("TEXT")) {
             TextMessage ret =  TextMessage.obtain(map.getString("content"));
             if (map.hasKey("extra")) {
                 ret.setExtra(map.getString("extra"));
             }
             return ret;
-        } else if (type.equals("voice")) {
+        } else if (type.equals("VOICE")) {
             VoiceMessage ret = VoiceMessage.obtain(Uri.parse(map.getString("uri")), map.getInt("duration"));
 //            ret.setBase64(map.getString("base64"));
             if (map.hasKey("extra")) {
                 ret.setExtra(map.getString("extra"));
             }
             return ret;
-        } else if (type.equals("image")) {
+        } else if (type.equals("IMAGE")) {
             String uri = map.getString("imageUrl");
             ImageMessage ret = ImageMessage.obtain(Uri.parse(uri), Uri.parse(uri), map.hasKey("full") && map.getBoolean("full"));
             if (map.hasKey("extra")) {
                 ret.setExtra(map.getString("extra"));
             }
             return ret;
-        } else if (type.equals("notify")) {
+        } else if (type.equals("NOTIFY")) {
             CommandNotificationMessage ret = CommandNotificationMessage.obtain(map.getString("name"), map.getString("data"));
             return ret;
         }

@@ -31,7 +31,7 @@ public class IntentDataModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void dataToJS(final Promise promise){
+    public void dataToJS(final Promise promise) {
         try{
             intent = getCurrentActivity().getIntent();
             Log.i("rong intent msg", "接收到推送消息");
