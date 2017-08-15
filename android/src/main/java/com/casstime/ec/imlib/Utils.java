@@ -144,18 +144,19 @@ public class Utils {
 
     public static WritableMap convertConversation(Conversation conv) {
         WritableMap ret = Arguments.createMap();
-        ret.putBoolean("isTop", conv.isTop());
-        ret.putString("conversationType", conv.getConversationType().getName().toUpperCase());
-        ret.putString("targetId", conv.getTargetId());
-        ret.putString("senderUserId", conv.getSenderUserId());
-        ret.putInt("unreadCount", conv.getUnreadMessageCount());
-        ret.putDouble("sentTime", conv.getSentTime());
-        ret.putDouble("receivedTime", conv.getReceivedTime());
-        ret.putDouble("latestMessageId", conv.getLatestMessageId());
-        ret.putString("conversationTitle", conv.getConversationTitle());
-        ret.putMap("latestMessage", convertMessageContent(conv.getLatestMessage()));
+        if (conv != null) {
+            ret.putBoolean("isTop", conv.isTop());
+            ret.putString("conversationType", conv.getConversationType().getName().toUpperCase());
+            ret.putString("targetId", conv.getTargetId());
+            ret.putString("senderUserId", conv.getSenderUserId());
+            ret.putInt("unreadCount", conv.getUnreadMessageCount());
+            ret.putDouble("sentTime", conv.getSentTime());
+            ret.putDouble("receivedTime", conv.getReceivedTime());
+            ret.putDouble("latestMessageId", conv.getLatestMessageId());
+            ret.putString("conversationTitle", conv.getConversationTitle());
+            ret.putMap("latestMessage", convertMessageContent(conv.getLatestMessage()));
+        }
         return ret;
-
     }
 
     public static MessageContent convertToMessageContent(ReadableMap map) {
