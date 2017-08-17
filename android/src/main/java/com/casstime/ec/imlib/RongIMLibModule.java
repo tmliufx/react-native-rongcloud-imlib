@@ -126,7 +126,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
       NotificationManager mNotificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
       NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context);
       MessageContent content = message.getContent();
-      String title = content.getUserInfo() != null ? content.getUserInfo().getName() : message.getSenderUserId();
+      String title = content.getUserInfo() != null ? content.getUserInfo().getName() : "开思客服";
 
       String contentString = Utils.convertMessageContentToString(content);
       mBuilder.setSmallIcon(context.getApplicationInfo().icon)
@@ -342,6 +342,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
     imClient.getConversation(Conversation.ConversationType.valueOf(type), targetId, new RongIMClient.ResultCallback<Conversation>() {
       @Override
       public void onSuccess(Conversation conversation) {
+        if (null != conversation)
         promise.resolve(Utils.convertConversation(conversation));
       }
       @Override
