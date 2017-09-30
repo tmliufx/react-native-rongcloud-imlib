@@ -343,7 +343,7 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
       @Override
       public void onSuccess(Conversation conversation) {
         if (null != conversation)
-        promise.resolve(Utils.convertConversation(conversation));
+          promise.resolve(Utils.convertConversation(conversation));
       }
       @Override
       public void onError(RongIMClient.ErrorCode e) {
@@ -960,7 +960,6 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
    * 根据消息类型，targetId 清除某一会话的文字消息草稿。
    * @param type
    * @param targetId
-   * @param content  草稿的文字内容
    * @param promise
    */
   @ReactMethod
