@@ -170,7 +170,6 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
    */
   @ReactMethod
   public void connect(String token, final Promise promise) {
-    final RongIMLibModule self = this;
     if (imClient != null) {
       promise.reject(IS_CONNECTED, "已经有连接上融云服务器的实例");
       return;
