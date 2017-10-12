@@ -121,7 +121,9 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
   public boolean onReceived(Message message, int i) {
     emitEvent(RONG_MESSAGE_RECEIVED, Utils.convertMessage(message));
 
-    if (!hostActive) {
+    String targetId = message.getTargetId();
+
+    if (!hostActive || targetId.equals("system") ) {
       Context context = getReactApplicationContext();
       NotificationManager mNotificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
       NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context);
@@ -145,11 +147,11 @@ public class RongIMLibModule extends ReactContextBaseJavaModule implements RongI
 
       TextMessage textContent = (TextMessage)message.getContent();
       builder.appendPath("conversation")
-              .appendPath(message.getConversationType().getName())
-              .appendQueryParameter("messageUId", message.getUId())
-              .appendQueryParameter("content", textContent.getContent())
-              .appendQueryParameter("targetId", message.getTargetId())
-              .appendQueryParameter("extra",message.getExtra());
+        .appendPath(message.getConversationType().getName())
+        .appendQueryParameter("messageUId", message.getUId())
+        .appendQueryParameter("content", textContent.getContent())
+        .appendQueryParameter("targetId", message.getTargetId())
+        .appendQueryParameter("extra", textContent.getExtra());
 
       intent.setData(builder.build());
       mBuilder.setContentIntent(PendingIntent.getActivity(getReactApplicationContext().getCurrentActivity(), 0, intent, 0));
